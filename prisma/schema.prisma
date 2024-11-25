@@ -12,3 +12,56 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Game {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  players   Player[]
+  cells     Cell[]
+  state     GameState @default(INITIAL)
+  turn      String?
+}
+
+model Cell {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  row       Int
+  col       Int
+  value     CellValue @default(EMPTY)
+
+  @@unique([gameId, row, col])
+}
+
+model Player {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String   @unique
+  players   Player[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GameState {
+  INITIAL
+  IN_PROGRESS
+  FINISHED
+}
+
+enum CellValue {
+  X
+  O
+  EMPTY
+}
