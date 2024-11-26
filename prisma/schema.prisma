@@ -37,11 +37,14 @@ model Cell {
 }
 
 model Player {
-  id     String @id @default(uuid())
+  id     String    @id @default(uuid())
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   gameId String
-  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  game   Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  sybmol CellValue
+
+  @@unique([gameId, userId])
 }
 
 model User {
