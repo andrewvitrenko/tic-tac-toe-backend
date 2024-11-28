@@ -42,7 +42,7 @@ model Player {
   user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   gameId String
   game   Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  sybmol CellValue
+  symbol CellValue
 
   @@unique([gameId, userId])
 }
