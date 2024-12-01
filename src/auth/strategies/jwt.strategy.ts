@@ -10,7 +10,7 @@ import { UsersService } from '@/users/users.service';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly usersService: UsersService,
-    configService: ConfigService,
+    private configService: ConfigService,
   ) {
     super({
       ignoreExpiration: false,

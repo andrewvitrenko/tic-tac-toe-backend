@@ -15,61 +15,86 @@ export class GamesService {
   public getById(id: string) {
     return this.prismaService.game.findUnique({
       where: { id },
-      include: { cells: true, players: { include: { user: true } } },
+      include: {
+        cells: true,
+        winner: true,
+        players: { include: { user: true } },
+      },
     });
   }
 
   public async create(userId: string) {
     const game = await this.prismaService.game.create({
-      data: {
-        cells: { createMany: { data: initialState } },
-        players: { create: { userId, symbol: CellValue.X } },
-      },
+      data: { cells: { createMany: { data: initialState } } },
+    });
+
+    const player = await this.playersService.create({
+      symbol: CellValue.X,
+      userId,
+      gameId: game.id,
+    });
+
+    await this.prismaService.game.update({
+      where: { id: game.id },
+      data: { turn: player.id },
     });
 
     return this.getById(game.id);
   }
 
   public async join(gameId: string, userId: string) {
-    const player = await this.playersService.create({
+    await this.prismaService.game.update({
+      where: { id: gameId },
+      data: {
+        state: GameState.IN_PROGRESS,
+        players: { create: { userId, symbol: CellValue.O } },
+      },
+    });
+
+    return this.getById(gameId);
+  }
+
+  public async makeMove(gameId: string, userId: string, cellId: string) {
+    const currentPlayer = await this.playersService.getByGameAndUser({
       gameId,
       userId,
-      symbol: CellValue.O,
+    });
+    const players = await this.playersService.getByGame(gameId);
+
+    const nextPlayer = players.find((p) => p.id !== currentPlayer.id);
+
+    await this.prismaService.cell.update({
+      where: { id: cellId },
+      data: { value: currentPlayer.symbol },
     });
 
-    this.prismaService.game.update({
+    await this.prismaService.game.update({
       where: { id: gameId },
-      data: { turn: player.id, state: GameState.IN_PROGRESS },
+      data: { turn: nextPlayer.id },
     });
 
     return this.getById(gameId);
   }
 
-  public async makeTurn(gameId: string, playerId: string, cellId: string) {
-    // const currentPlayer = await this.playersService.getById(playerId);
-    // const players = await this.playersService.getByGameId(gameId);
-    //
-    // const nextPlayer = players.find((p) => p.id !== playerId);
-    //
-    // await this.prismaService.cell.update({
-    //   where: { id: cellId },
-    //   data: { value: currentPlayer.symbol },
-    // });
-    //
-    // await this.prismaService.game.update({
-    //   where: { id: gameId },
-    //   data: { turn: nextPlayer.id },
-    // });
-
-    return this.getById(gameId);
-  }
-
-  public async getState(
-    id: string,
-  ): Promise<{ state: GameState; winner?: string }> {
+  public async updateState(gameId: string, userId: string) {
     const game = await this.prismaService.game.findUnique({
-      where: { id },
+      where: { id: gameId },
       include: { cells: true, players: true },
+    });
+
+    // if players have filled all the cells and no one has won
+    if (game.cells.every(({ value }) => value !== CellValue.EMPTY)) {
+      await this.prismaService.game.update({
+        where: { id: gameId },
+        data: { state: GameState.FINISHED },
+      });
+
+      return this.getById(gameId);
+    }
+
+    const player = await this.playersService.getByGameAndUser({
+      gameId,
+      userId,
     });
 
     for (const combination of winCombinations) {
@@ -77,17 +102,21 @@ export class GamesService {
         combination.find((cell) => cell[0] === col && cell[1] === row),
       );
 
-      const values = [...new Set(cells.map(({ value }) => value))];
+      const isWinner = cells.every(({ value }) => value === player.symbol);
 
-      if (values.length === 1) {
-        const symbol = values[0];
+      if (isWinner) {
+        await this.prismaService.game.update({
+          where: { id: gameId },
+          data: {
+            state: GameState.FINISHED,
+            winner: { connect: { id: userId } },
+          },
+        });
 
-        // const winner = game.players.find((p) => p.symbol === symbol);
-
-        return { state: GameState.FINISHED };
+        break;
       }
     }
 
-    return { state: GameState.IN_PROGRESS };
+    return this.getById(gameId);
   }
 }

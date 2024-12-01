@@ -7,10 +7,14 @@ import {
 import { isUUID } from 'class-validator';
 
 import { GamesService } from '@/games/games.service';
+import { PlayersService } from '@/players/players.service';
 
 @Injectable()
 export class JoinGameGuard implements CanActivate {
-  constructor(private readonly gamesService: GamesService) {}
+  constructor(
+    private readonly gamesService: GamesService,
+    private readonly playersService: PlayersService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -22,8 +26,12 @@ export class JoinGameGuard implements CanActivate {
     }
 
     const game = await this.gamesService.getById(gameId);
+    const player = await this.playersService.getByGameAndUser({
+      gameId,
+      userId,
+    });
 
-    if (game.players.find(({ user: { id } }) => id === userId)) {
+    if (player) {
       throw new BadRequestException('You are already in this game');
     }
 

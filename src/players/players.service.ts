@@ -20,4 +20,8 @@ export class PlayersService {
       where: { gameId_userId: getByGameAndUserDto },
     });
   }
+
+  public getByGame(gameId: string) {
+    return this.prismaService.player.findMany({ where: { gameId } });
+  }
 }
