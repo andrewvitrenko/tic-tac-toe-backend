@@ -1,73 +1,95 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Tic Tac Toe
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This repo is a back-end part of the application. The front-end part can be
+found [here](https://github.com/andrewvitrenko/tic-tac-toe-frontend).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Introduction
 
-## Description
+Tic-tac-toe is a simple, two-player game that, if played optimally by both
+players, will always result in a tie. The game is also called noughts and
+crosses or Xs and Os.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Rules
+
+The game is played on a 3x3 grid. One player is X and the other player is O.
+Players take turns placing their X or O. If a player gets three of their marks
+on the grid in a row, column, or one of the two diagonals, they win. When the
+grid is full and no player has won, the game is a tie.
 
 ## Installation
 
-```bash
-$ npm install
-```
+### Requirements
 
-## Running the app
+- [Node.js](https://nodejs.org/en/download/), LTS version or higher
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- Modern browser: Chrome, Firefox, Safari, Edge
 
-```bash
-# development
-$ npm run start
+### Instructions
 
-# watch mode
-$ npm run start:dev
+1. Clone the repository:
+2. Create `.env` file with the following variables:
+   ```bash
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/tic_tac_toe
+   JWT_SECRET=secret
+   ```
+3. Setup the database:
+   ```bash
+    docker-compose up && npx prisma migrate deploy
+    ```
+4. Install dependencies:
+    ```bash
+    npm ci
+    ```
+   This will install all dependencies from the `package-lock.json` file.
+5. Build the project:
+   ```bash
+   npm run build
+   ```
+6. Start the project:
+   ```bash
+    npm start
+    ```
 
-# production mode
-$ npm run start:prod
-```
+Your server is running on [http://localhost:8000](http://localhost:8000).
 
-## Test
+You can change the database url to your own in the `.env` file.
 
-```bash
-# unit tests
-$ npm run test
+## Modules
 
-# e2e tests
-$ npm run test:e2e
+The project is divided into modules:
 
-# test coverage
-$ npm run test:cov
-```
+### Auth
 
-## Support
+This module provides a basic, yet powerful JWT-based authentication. It
+uses [passport.js](https://docs.nestjs.com/recipes/passport) under the hood to
+create and manage all the strategies. This module provides the following public
+endpoints:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- `/auth/sign-up`
+- `/auth/login`
 
-## Stay in touch
+`/auth/login` endpoint is protected by local authentication strategy. For more
+details
+see [Local auth](https://docs.nestjs.com/recipes/passport#implementing-passport-local).
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Database
 
-## License
+To make requests to the database, the project
+uses [Prisma](https://www.prisma.io/) - one of the best ORMs today.
 
-Nest is [MIT licensed](LICENSE).
+### Users
+
+This module is responsible for any interaction with `users` table in database -
+create, read, update, delete operations. It exposes only one endpoint `/me`
+which is protected with JWT guards.
+
+### Games
+
+This module handles all the game-related logic. It handles creating, joining and
+playing
+game logic. It exposes http endpoints and also uses websockets for real-time
+communication.
+
+For security reasons every endpoint and and every WebSocket event are covered
+with special guards, which ensures stability and security of the application.
